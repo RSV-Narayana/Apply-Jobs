@@ -263,28 +263,37 @@ public class LinkedInJobExtractor {
     }
 
     /**
-     * Try to find job elements using current LinkedIn selectors
+     * Try to find job elements using 2026 LinkedIn selectors
+     * LinkedIn frequently updates its DOM structure, so multiple fallbacks are essential
      */
     private List<WebElement> tryFindJobElements() {
-        // LinkedIn job listings are typically in ul > li elements with these classes
-        // Try multiple selectors as LinkedIn UI changes frequently
-
         List<String> xpathSelectors = new ArrayList<>();
 
-        // Selector 1: Current LinkedIn structure (as of 2024)
-        xpathSelectors.add("//ul[@class='jobs-search__results-list']//li");
+        logger.info("Current Page URL in the Try Find Job Elements: {} ", driver.getCurrentUrl());
 
-        // Selector 2: Alternative with data attributes
-        xpathSelectors.add("//li[contains(@class, 'base-card')]");
-
-        // Selector 3: Using aria-label
-        xpathSelectors.add("//div[@data-job-id]");
-
-        // Selector 4: Job card containers
-        xpathSelectors.add("//div[contains(@class, 'base-card') and contains(@class, 'rounded-lg')]");
-
-        // Selector 5: Fallback generic selector
-        xpathSelectors.add("//article[contains(@class, 'job-')]");
+        // LinkedIn 2026 selectors (updated structure)
+        // Selector 1: Primary - ul with jobs-search__results-list
+        xpathSelectors.add("//ul//li[contains(@class, 'ember-view')]");
+        
+//        // Selector 2: Alternative - li elements with base-card class
+//        xpathSelectors.add("//li[contains(@class, 'ember-view')]");
+//
+//        // Selector 3: Article elements (2026 structure update)
+//        xpathSelectors.add("//article[contains(@data-job-id, '')]");
+//
+//        // Selector 4: Div elements with data-job-id attribute (2026 update)
+//        xpathSelectors.add("//div[contains(@class, 'base-card') and contains(@class, 'rounded-lg')]");
+//
+//        // Selector 5: Generic base-search-card elements
+//        xpathSelectors.add("//div[contains(@class, 'base-search-card')]");
+//
+//        // Selector 6: Job card container elements
+//        xpathSelectors.add("//li[contains(@class, 'card')]");
+//
+//        // Selector 7: Elements with data-occludable-job-id
+//        xpathSelectors.add("//*[@data-occludable-job-id]");
+        logger.info("Try Find Job Elements XPath: {} ", xpathSelectors.getFirst());
+        logger.info("tryFindJobElements: {}", driver.findElements(By.xpath(xpathSelectors.getFirst())));
 
         for (String xpath : xpathSelectors) {
             try {

@@ -5,6 +5,7 @@ import com.example.applyjobs.automation.WaitHelper;
 import com.example.applyjobs.config.EnvironmentVariableLoader;
 import com.example.applyjobs.linkedin.handlers.LinkedInApplicationHandler;
 import com.example.applyjobs.linkedin.handlers.LinkedInJobExtractor;
+import com.example.applyjobs.linkedin.handlers.LinkedInJobValidationHandler;
 import com.example.applyjobs.linkedin.handlers.LinkedInLoginHandler;
 import com.example.applyjobs.linkedin.handlers.LinkedInNavigationHandler;
 import com.example.applyjobs.matcher.JobMatcher;
@@ -26,6 +27,7 @@ public class LinkedInJobApplicationAgent {
     private LinkedInNavigationHandler navigationHandler;
     private LinkedInJobExtractor jobExtractor;
     private LinkedInApplicationHandler applicationHandler;
+    private LinkedInJobValidationHandler validationHandler;
     private JobMatcher jobMatcher;
     private ResultLogger resultLogger;
     private EnvironmentVariableLoader config;
@@ -94,6 +96,10 @@ public class LinkedInJobApplicationAgent {
             this.navigationHandler = new LinkedInNavigationHandler(driver);
             this.jobExtractor = new LinkedInJobExtractor(driver);
             this.applicationHandler = new LinkedInApplicationHandler(driver);
+            this.validationHandler = new LinkedInJobValidationHandler(driver, config.getJobSkills());
+
+            // Set validation handler in application handler
+            this.applicationHandler.setValidationHandler(validationHandler);
 
             // Initialize job matcher
             this.jobMatcher = new JobMatcher(
@@ -146,15 +152,15 @@ public class LinkedInJobApplicationAgent {
     }
 
     /**
-     * Extract and process job listings
+     * Extract and process job listings with comprehensive validation
      */
     private void processJobListings() {
         try {
             logger.info("Processing job listings");
 
-            // Extract latest 5 jobs
-            List<LinkedInJobListing> jobs = jobExtractor.extractLatestJobListings(1);
-            logger.info("Extracted {} jobs", jobs.size());
+            // Extract latest 10 jobs (configurable)
+            List<LinkedInJobListing> jobs = jobExtractor.extractLatestJobListings(10);
+            logger.info("Extracted {} jobs from LinkedIn", jobs.size());
 
             if (jobs.isEmpty()) {
                 logger.warn("No jobs found to process");
@@ -163,45 +169,61 @@ public class LinkedInJobApplicationAgent {
 
             // Apply to matching jobs
             int appliedCount = 0;
+            int skippedCount = 0;
+            int failedCount = 0;
+
             for (LinkedInJobListing job : jobs) {
                 try {
-                    logger.info("Processing job: {} - {}", job.getTitle(), job.getCompany());
+                    logger.info("========== Processing job: {} - {} ==========", job.getTitle(), job.getCompany());
 
-                    // Check if job matches
-                    if (jobMatcher.isMatch(job)) {
-                        logger.info("Job matches criteria, attempting to apply");
+                    // Initial skill-based matching
+                    if (!jobMatcher.isMatch(job)) {
+                        logger.info("Job does not match initial criteria (title/skills), skipping");
+                        skippedCount++;
+                        continue;
+                    }
 
-                        boolean success = applicationHandler.applyToJob(job);
+                    logger.info("Job passed initial skill matching, proceeding to apply with validation");
 
-                        // Log result
+                    // Apply to job (includes validation checks during application)
+                    boolean success = applicationHandler.applyToJob(job);
+
+                    if (success) {
+                        logger.info("Successfully applied to job: {}", job.getTitle());
+                        // Log only successful applications
                         ApplicationResult result = new ApplicationResult(
                             job.getTitle(),
                             job.getCompany(),
                             LocalDate.now(),
-                            success ? "SUCCESS" : "ATTEMPTED"
+                            "SUCCESS"
                         );
                         resultLogger.logResult(result);
                         appliedCount++;
-
-                        logger.info("Applied to job - Status: {}", result.getStatus());
                     } else {
-                        logger.info("Job does not match criteria, skipping");
+                        logger.warn("Application failed for job: {}", job.getTitle());
+                        failedCount++;
                     }
-                } catch (Exception e) {
-                    logger.error("Failed to process job: {}", job.getTitle(), e);
 
-                    // Log failed attempt
-                    ApplicationResult result = new ApplicationResult(
-                        job.getTitle(),
-                        job.getCompany(),
-                        LocalDate.now(),
-                        "FAILED"
-                    );
-                    resultLogger.logResult(result);
+                } catch (Exception e) {
+                    logger.error("Exception while processing job: {}", job.getTitle(), e);
+                    failedCount++;
+                }
+
+                // Add delay between job processing
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.warn("Job processing interrupted", e);
+                    break;
                 }
             }
 
-            logger.info("Applied to {} out of {} jobs", appliedCount, jobs.size());
+            logger.info("========== Job Processing Summary ==========");
+            logger.info("Total jobs extracted: {}", jobs.size());
+            logger.info("Jobs applied: {}", appliedCount);
+            logger.info("Jobs skipped (not matching): {}", skippedCount);
+            logger.info("Jobs failed: {}", failedCount);
 
         } catch (Exception e) {
             logger.error("Failed to process job listings", e);

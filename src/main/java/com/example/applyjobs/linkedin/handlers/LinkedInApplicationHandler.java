@@ -19,6 +19,7 @@ public class LinkedInApplicationHandler {
     private static final Logger logger = LoggerFactory.getLogger(LinkedInApplicationHandler.class);
     private WebDriver driver;
     private WaitHelper waitHelper;
+    private LinkedInJobValidationHandler validationHandler;
     private static final int MIN_DELAY = 10000; // 10 seconds
     private static final int MAX_DELAY = 30000; // 30 seconds
 
@@ -27,8 +28,12 @@ public class LinkedInApplicationHandler {
         this.waitHelper = new WaitHelper(driver);
     }
 
+    public void setValidationHandler(LinkedInJobValidationHandler validationHandler) {
+        this.validationHandler = validationHandler;
+    }
+
     /**
-     * Apply to a job
+     * Apply to a job with validation checks
      */
     public boolean applyToJob(LinkedInJobListing job) {
         try {
@@ -36,6 +41,19 @@ public class LinkedInApplicationHandler {
 
             // Click on the job to view details
             clickJobListing(job);
+            Thread.sleep(3000); // Wait for details panel to load
+
+            // Validate job against criteria if validation handler is set
+            if (validationHandler != null) {
+                logger.info("Validating job against criteria...");
+                LinkedInJobValidationHandler.ValidationResult validationResult = validationHandler.validateJob(job);
+
+                if (!validationResult.isValid) {
+                    logger.warn("Job failed validation: {}", validationResult.getSummary());
+                    return false;
+                }
+                logger.info("Job passed all validation checks");
+            }
 
             // Click apply button
             if (!clickApplyButton()) {
@@ -124,18 +142,21 @@ public class LinkedInApplicationHandler {
     }
 
     /**
-     * Handle the Easy Apply modal flow
+     * Handle the Easy Apply modal flow with improved form navigation
      */
     private boolean handleEasyApplyFlow() {
         try {
             logger.info("Starting Easy Apply flow");
 
-            // Process multiple steps in the form
-            int maxIterations = 10;
+            int maxIterations = 15; // Increased for complex forms
             for (int i = 0; i < maxIterations; i++) {
                 logger.debug("Easy Apply step {}", i + 1);
 
                 try {
+                    // Scroll to ensure form is visible
+                    ((JavascriptExecutor) driver).executeScript("window.scrollTo(0, document.body.scrollHeight);");
+                    Thread.sleep(500);
+
                     // Check if on review step
                     if (isReviewStep()) {
                         logger.info("On review step");
@@ -148,27 +169,31 @@ public class LinkedInApplicationHandler {
                         handleAdditionalQuestions();
                     }
 
-                    // Try to click Next button
-                    if (clickNextButton()) {
-                        logger.debug("Clicked Next button");
-                        Thread.sleep(1000);
-                        continue;
-                    }
-
-                    // Try to click Submit button
+                    // Try to click Submit button first (may be last step)
                     if (clickSubmitButton()) {
-                        logger.info("Clicked Submit button - application submitted");
+                        logger.info("Clicked Submit button - application submitted successfully");
                         Thread.sleep(2000);
                         return true;
                     }
 
+                    // Try to click Next button to continue
+                    if (clickNextButton()) {
+                        logger.debug("Clicked Next button, proceeding to next step");
+                        Thread.sleep(1000);
+                        continue;
+                    }
+
                     // No more buttons found, might be complete
-                    logger.info("No more buttons to click, application may be complete");
+                    logger.info("No more buttons to click, application workflow complete");
                     return true;
 
                 } catch (NoSuchElementException e) {
                     logger.debug("Expected element not found in step {}", i + 1);
                     continue;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.error("Easy Apply flow interrupted", e);
+                    return false;
                 }
             }
 
@@ -407,39 +432,83 @@ public class LinkedInApplicationHandler {
     }
 
     /**
-     * Click Next button
+     * Click Next button with improved selectors for 2026
      */
     private boolean clickNextButton() {
         try {
-            By nextButtonLocator = By.xpath("//button[contains(text(), 'Next')]");
-            WebElement nextButton = waitHelper.waitForElementClickable(nextButtonLocator, 5);
+            // Try multiple button selectors for Next
+            String[] nextButtonXpaths = {
+                "//button[contains(text(), 'Next')]",
+                "//button[contains(@aria-label, 'Next')]",
+                "//button[contains(@data-test-id, 'next')]",
+                "//button[contains(@class, 'next')]",
+                "//button[@aria-label='Continue to next step']",
+                "//button[text()='Next']"
+            };
 
-            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", nextButton);
-            Thread.sleep(300);
+            for (String xpath : nextButtonXpaths) {
+                try {
+                    List<WebElement> buttons = driver.findElements(By.xpath(xpath));
+                    for (WebElement button : buttons) {
+                        if (button.isDisplayed() && button.isEnabled()) {
+                            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", button);
+                            Thread.sleep(300);
+                            button.click();
+                            logger.info("Clicked Next button");
+                            return true;
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.debug("Next button xpath failed: {}", xpath);
+                }
+            }
 
-            nextButton.click();
-            return true;
-        } catch (Exception e) {
             logger.debug("Next button not found or not clickable");
+            return false;
+        } catch (Exception e) {
+            logger.debug("Error finding Next button", e);
             return false;
         }
     }
 
     /**
-     * Click Submit button
+     * Click Submit button with improved selectors for 2026
      */
     private boolean clickSubmitButton() {
         try {
-            By submitButtonLocator = By.xpath("//button[contains(text(), 'Submit') or contains(text(), 'Done')]");
-            WebElement submitButton = waitHelper.waitForElementClickable(submitButtonLocator, 5);
+            // Try multiple button selectors for Submit/Done
+            String[] submitButtonXpaths = {
+                "//button[contains(text(), 'Submit') or contains(text(), 'Done')]",
+                "//button[contains(@aria-label, 'Submit')]",
+                "//button[contains(@data-test-id, 'submit')]",
+                "//button[contains(@class, 'submit')]",
+                "//button[@aria-label='Submit application']",
+                "//button[text()='Submit application']",
+                "//button[text()='Submit']",
+                "//button[text()='Done']"
+            };
 
-            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", submitButton);
-            Thread.sleep(300);
+            for (String xpath : submitButtonXpaths) {
+                try {
+                    List<WebElement> buttons = driver.findElements(By.xpath(xpath));
+                    for (WebElement button : buttons) {
+                        if (button.isDisplayed() && button.isEnabled()) {
+                            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", button);
+                            Thread.sleep(300);
+                            button.click();
+                            logger.info("Clicked Submit button");
+                            return true;
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.debug("Submit button xpath failed: {}", xpath);
+                }
+            }
 
-            submitButton.click();
-            return true;
-        } catch (Exception e) {
             logger.debug("Submit button not found or not clickable");
+            return false;
+        } catch (Exception e) {
+            logger.debug("Error finding Submit button", e);
             return false;
         }
     }

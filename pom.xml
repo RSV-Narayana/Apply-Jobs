@@ -25,8 +25,8 @@
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <selenium.version>4.15.0</selenium.version>
-        <webdrivermanager.version>5.6.2</webdrivermanager.version>
+        <selenium.version>4.20.0</selenium.version>
+        <webdrivermanager.version>5.9.1</webdrivermanager.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <slf4j.version>2.0.9</slf4j.version>
     </properties>
@@ -44,6 +44,7 @@
             <artifactId>selenium-java</artifactId>
             <version>${selenium.version}</version>
         </dependency>
+
 
         <!-- WebDriverManager for automatic ChromeDriver management -->
         <dependency>
