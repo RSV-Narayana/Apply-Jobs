@@ -228,7 +228,7 @@ agents/
 ## Troubleshooting
 
 See individual agent documentation:
-- [LINKEDIN_AGENT.md](LINKEDIN_AGENT.md) - LinkedIn-specific issues
+- [LINKEDIN_AGENT.md](LINKEDIN_AGENT.agent.md) - LinkedIn-specific issues
 - [DICE_AGENT.md](DICE_AGENT.md) - Dice-specific issues
 - [BROWSER_AUTOMATION.md](BROWSER_AUTOMATION.md) - General browser issues
 

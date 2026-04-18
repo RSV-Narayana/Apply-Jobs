@@ -54,11 +54,15 @@ public class LinkedInJobApplicationAgent {
             // Navigate to jobs
             navigationHandler.navigateToJobsPage();
 
+            Thread.sleep(5000);
             // Search or click recent search
             performJobSearch();
 
+            Thread.sleep(10000);
             // Extract and process jobs
             processJobListings();
+
+            Thread.sleep(10000);
 
             // Write summary
             resultLogger.writeSummary();
@@ -124,6 +128,7 @@ public class LinkedInJobApplicationAgent {
      */
     private void performJobSearch() {
         try {
+            Thread.sleep(5000);
             logger.info("Searching for jobs: {}", config.getJobTitle());
 
             // Try to click recent search first
@@ -148,7 +153,7 @@ public class LinkedInJobApplicationAgent {
             logger.info("Processing job listings");
 
             // Extract latest 5 jobs
-            List<LinkedInJobListing> jobs = jobExtractor.extractLatestJobListings(5);
+            List<LinkedInJobListing> jobs = jobExtractor.extractLatestJobListings(1);
             logger.info("Extracted {} jobs", jobs.size());
 
             if (jobs.isEmpty()) {

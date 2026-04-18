@@ -497,7 +497,7 @@ public class PerformantJobMatcher {
 ## Integration with Job Application Agent
 
 See:
-- [LINKEDIN_AGENT.md](LINKEDIN_AGENT.md) - How matching integrates with LinkedIn workflow
+- [LINKEDIN_AGENT.md](LINKEDIN_AGENT.agent.md) - How matching integrates with LinkedIn workflow
 - [DICE_AGENT.md](DICE_AGENT.md) - How matching integrates with Dice workflow
 - [README.md](README.md) - Overall system architecture
 

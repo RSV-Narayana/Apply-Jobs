@@ -421,7 +421,7 @@ resultLogger.logJob(job, matchDetails);
 
 ## References
 
-- [LINKEDIN_AGENT.md](LINKEDIN_AGENT.md) - Full implementation details
+- [LINKEDIN_AGENT.md](LINKEDIN_AGENT.agent.md) - Full implementation details
 - [LINKEDIN_QUESTIONS_CONFIG.md](LINKEDIN_QUESTIONS_CONFIG.md) - Configuration guide
 - [JOB_MATCHING_LOGGING.md](JOB_MATCHING_LOGGING.md) - Matching algorithm details
 

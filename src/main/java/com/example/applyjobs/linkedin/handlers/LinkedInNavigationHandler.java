@@ -30,7 +30,7 @@ public class LinkedInNavigationHandler {
             logger.info("Navigating to LinkedIn jobs page");
             driver.get(LINKEDIN_JOBS_URL);
             waitHelper.waitForPageLoad();
-            Thread.sleep(2000);
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new NavigationException("Navigation interrupted", e);
@@ -45,20 +45,27 @@ public class LinkedInNavigationHandler {
      */
     public void clickRecentSearch(String jobTitle) {
         try {
+
+
+//            System.out.println(By.xpath("//a[.//span[contains(text(), 'full stack engineer')]"));
+
             logger.info("Looking for recent search: {}", jobTitle);
 
+            jobTitle = jobTitle.toLowerCase();
             // Find all recent searches
             List<WebElement> recentSearches = driver.findElements(
-                By.xpath("//button[contains(@class, 'search') and contains(text(), '" + jobTitle + "')]")
+                    By.xpath("//div[@componentkey='JobsHomeATFModule_RecentJobSearchesModule']//a[.//span[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '"+jobTitle+"')]]")
             );
 
-            if (recentSearches.isEmpty()) {
-                logger.warn("No recent search found for: {}, trying alternative selector", jobTitle);
-                // Try alternative selector
-                recentSearches = driver.findElements(
-                    By.xpath("//span[contains(text(), '" + jobTitle + "')]")
-                );
-            }
+            logger.info("Recent Search Xpath WebElement: {}", recentSearches);
+
+//            if (recentSearches.isEmpty()) {
+//                logger.warn("No recent search found for: {}, trying alternative selector", jobTitle);
+//                // Try alternative selector
+//                recentSearches = driver.findElements(
+//                    By.xpath("//span[contains(text(), '" + jobTitle + "')]")
+//                );
+//            }
 
             if (!recentSearches.isEmpty()) {
                 WebElement searchElement = recentSearches.get(0);
@@ -68,7 +75,7 @@ public class LinkedInNavigationHandler {
                 ((org.openqa.selenium.JavascriptExecutor) driver)
                     .executeScript("arguments[0].scrollIntoView(true);", searchElement);
 
-                Thread.sleep(500);
+                Thread.sleep(10000);
                 searchElement.click();
 
                 // Wait for results to load

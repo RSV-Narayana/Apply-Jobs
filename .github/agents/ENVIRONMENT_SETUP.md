@@ -334,6 +334,6 @@ System.out.println("LINKEDIN_USERNAME: " + System.getenv("LINKEDIN_USERNAME"));
 
 See additional files for practical examples:
 - [BROWSER_AUTOMATION.md](BROWSER_AUTOMATION.md) - How variables are used in login
-- [LINKEDIN_AGENT.md](LINKEDIN_AGENT.md) - LinkedIn-specific variable usage
+- [LINKEDIN_AGENT.md](LINKEDIN_AGENT.agent.md) - LinkedIn-specific variable usage
 - [DICE_AGENT.md](DICE_AGENT.md) - Dice-specific variable usage
 

@@ -599,5 +599,5 @@ public void applyToJob(JobListing job) {
 - **Cause**: Browser crashed or connection lost
 - **Solution**: Implement retry logic, restart WebDriver
 
-See [LINKEDIN_AGENT.md](LINKEDIN_AGENT.md) and [DICE_AGENT.md](DICE_AGENT.md) for portal-specific patterns.
+See [LINKEDIN_AGENT.md](LINKEDIN_AGENT.agent.md) and [DICE_AGENT.md](DICE_AGENT.md) for portal-specific patterns.
 
