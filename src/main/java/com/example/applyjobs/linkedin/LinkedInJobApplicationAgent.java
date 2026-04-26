@@ -237,6 +237,7 @@ public class LinkedInJobApplicationAgent {
     private void closeDriver() {
         try {
             logger.info("Closing browser");
+//            Thread.sleep(200000);
             BrowserAutomationEngine engine = BrowserAutomationEngine.getInstance();
             engine.closeDriver();
             logger.info("Browser closed successfully");

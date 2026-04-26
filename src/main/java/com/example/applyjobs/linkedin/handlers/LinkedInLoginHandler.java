@@ -110,7 +110,14 @@ public class LinkedInLoginHandler {
                 // Scroll into view first
                 ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", loginButton);
                 Thread.sleep(500);
-                loginButton.click();
+                
+                // Use JavaScript click if session_redirect is in URL (element may not be interactable otherwise)
+                if (driver.getCurrentUrl().contains("session_redirect")) {
+                    logger.info("Using JavaScript click due to session_redirect in URL");
+                    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", loginButton);
+                } else {
+                    loginButton.click();
+                }
                 logger.info("Login button clicked");
             } else {
                 logger.error("Could not find login button");
@@ -159,6 +166,7 @@ public class LinkedInLoginHandler {
         selectors.add(By.name("session_key"));
         selectors.add(By.xpath("//input[@type='email']"));
         selectors.add(By.xpath("//input[@autocomplete='username']"));
+        selectors.add(By.xpath("//input[@autocomplete='webauthn']"));
 
         for (By selector : selectors) {
             try {
@@ -166,9 +174,15 @@ public class LinkedInLoginHandler {
                 List<WebElement> elements = driver.findElements(selector);
                 if (!elements.isEmpty()) {
                     WebElement element = elements.get(0);
-                    logger.info("Found username field with selector: {} (id={}, type={})", 
-                        selector, element.getAttribute("id"), element.getAttribute("type"));
-                    return element;
+                    
+                    // Validate that this is the username field by checking for specific attributes
+                    String id = element.getAttribute("id");
+                    String autocomplete = element.getAttribute("autocomplete");
+                    if ("username".equals(id) || "webauthn".equals(autocomplete)) {
+                        logger.info("Found username field with selector: {} (id={}, type={})", 
+                            selector, element.getAttribute("id"), element.getAttribute("type"));
+                        return element;
+                    }
                 }
             } catch (Exception e) {
                 logger.debug("Username selector failed: {} - {}", selector, e.getMessage());
@@ -186,7 +200,11 @@ public class LinkedInLoginHandler {
     private WebElement findPasswordField() {
         List<By> selectors = new ArrayList<>();
         // Primary: First password input on the page (position-based for dynamic IDs)
-        selectors.add(By.xpath("(//input[@type='password'])[1]"));
+        if(driver.getCurrentUrl().contains("session_redirect")){
+            selectors.add(By.xpath("(//input[@type='password'])[2]"));
+        }else {
+            selectors.add(By.xpath("(//input[@type='password'])[1]"));
+        }
         // Fallback: Try by ID if LinkedIn ever uses static IDs
         selectors.add(By.id("password"));
         selectors.add(By.name("session_password"));
@@ -198,9 +216,15 @@ public class LinkedInLoginHandler {
                 List<WebElement> elements = driver.findElements(selector);
                 if (!elements.isEmpty()) {
                     WebElement element = elements.get(0);
-                    logger.info("Found password field with selector: {} (id={}, type={})", 
-                        selector, element.getAttribute("id"), element.getAttribute("type"));
-                    return element;
+                    
+                    // Validate that this is the password field by checking for specific attributes
+                    String id = element.getAttribute("id");
+                    String autocomplete = element.getAttribute("autocomplete");
+                    if ("password".equals(id) || "current-password".equals(autocomplete)) {
+                        logger.info("Found password field with selector: {} (id={}, type={}, autocomplete={})", 
+                            selector, element.getAttribute("id"), element.getAttribute("type"), element.getAttribute(autocomplete));
+                        return element;
+                    }
                 }
             } catch (Exception e) {
                 logger.debug("Password selector failed: {} - {}", selector, e.getMessage());
@@ -226,6 +250,7 @@ public class LinkedInLoginHandler {
                 List<WebElement> elements = driver.findElements(selector);
                 if (!elements.isEmpty()) {
                     WebElement element = elements.get(0);
+                    logger.info(" Sign in element New : {} ", element.getAttribute("outerHTML"));
                     logger.info("Found login button with selector: {} (text={})", selector, element.getText());
                     return element;
                 }
