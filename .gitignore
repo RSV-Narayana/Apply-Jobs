@@ -36,3 +36,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### MAC OS Creates Folder ###
+.DS_Store/
